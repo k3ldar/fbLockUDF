@@ -24,15 +24,11 @@
 #endif
 #endif
 
-//#ifdef __cplusplus
 extern "C" 
 {
-//#endif
 
-	FBUDF_API int fbServerLockGetT(const char *lockName, int *maxAge, long *transactionID);
 	FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge);
 	FBUDF_API int fbServerLockRel(const char *lockName);
-
-//#ifdef __cplusplus
+	FBUDF_API int fbServerLockClr();
+	FBUDF_API int fbGetLockCount();
 }
-//#endif

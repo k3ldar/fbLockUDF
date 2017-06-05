@@ -15,9 +15,10 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
+#include <string.h>
+
 #include "fbLockList.h"
 #include "fbLock.h"
-#include <string.h>
 
 #ifndef FB_LOCK_FUNCTIONS
 #define FB_LOCK_FUNCTIONS
@@ -59,7 +60,7 @@ FBUDF_API int fbServerLockRel(const char *lockName)
 	}
 	catch (...)
 	{
-		return (FBServerLock::LR_FAILED);
+		return (GetLastError());
 	}
 
 	return (FBServerLock::LR_FAILED);
@@ -72,7 +73,7 @@ FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge)
 		if (!lockName)
 			return (FBServerLock::LR_INVALID_LOCK_NAME);
 
-		if (*maxAge < 0 || *maxAge > 1440)
+		if (*maxAge < 1 || *maxAge > 1440)
 			return (FBServerLock::LR_INVALID_AGE);
 
 		if (strlen(lockName) > 100)
@@ -82,32 +83,28 @@ FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge)
 	}
 	catch (...)
 	{
-		return (FBServerLock::LR_FAILED);
+		return (GetLastError());
 	}
 
 	return (FBServerLock::LR_FAILED);
 }
 
-FBUDF_API int fbServerLockGetT(const char *lockName, int *maxAge, long *transactionID)
+FBUDF_API int fbServerLockClr()
 {
 	try
 	{
-		if (!lockName)
-			return (FBServerLock::LR_INVALID_LOCK_NAME);
-
-		if (*maxAge < 0 || *maxAge > 1440)
-			return (FBServerLock::LR_INVALID_AGE);
-
-		if (strlen(lockName) > 100)
-			return (FBServerLock::LR_INVALID_PARAMETER);
-
-		return (FBServerLock::__activeLockList.add(std::string(lockName), *maxAge, *transactionID));
+		return (FBServerLock::__activeLockList.clearAll());
 	}
 	catch (...)
 	{
-		return (FBServerLock::LR_FAILED);
+		return (GetLastError());
 	}
 
 	return (FBServerLock::LR_FAILED);
+}
+
+FBUDF_API int fbGetLockCount()
+{
+	return (FBServerLock::__activeLockList.getLockCount());
 }
 

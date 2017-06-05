@@ -81,38 +81,9 @@ namespace FBServerLock
 		}
 	}
 
-	int fbLockList::add(std::string name, ULONG32 maxAge, long transactionID)
+	int fbLockList::add(const std::string &name, ULONG32 maxAge)
 	{
 		cleanItems();
-
-		if (exists(name))
-			return (LR_NAME_EXISTS);
-
-		HANDLE mutexHwnd = CreateMutex(NULL, false, name.c_str());
-
-		switch (GetLastError())
-		{
-			case ERROR_ALREADY_EXISTS:
-				ReleaseMutex(mutexHwnd);
-				CloseHandle(mutexHwnd);
-				mutexHwnd = INVALID_HANDLE_VALUE;
-				return (LR_NAME_EXISTS);
-			case ERROR_INVALID_HANDLE:
-				return (LR_INVALID_HANDLE);
-			case ERROR_ACCESS_DENIED:
-				return (LR_ACCESS_DENIED);
-		}
-
-		fbLockObject* lockObj = new fbLockObject(mutexHwnd, maxAge, name, transactionID);
-		return (add(*lockObj));
-	}
-
-	int fbLockList::add(std::string name, ULONG32 maxAge)
-	{
-		cleanItems();
-
-		if (exists(name))
-			return (LR_NAME_EXISTS);
 
 		HANDLE mutexHwnd = CreateMutex(NULL, false, name.c_str());
 
@@ -133,15 +104,16 @@ namespace FBServerLock
 		return (add(*lockObj));
 	}
 
-	int fbLockList::add(fbLockObject lObj)
+	int fbLockList::add(const fbLockObject &lObj)
 	{
 		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
 		{
 			case WAIT_TIMEOUT:
 				return (LR_TIME_OUT);
 			case WAIT_FAILED:
+				return (LR_WAIT_FAILED);
 			case WAIT_ABANDONED:
-				return (LR_FAILED);
+				return (LR_WAIT_ABANDONED);
 		}
 
 		if (_lockObjects.size() > _maxItems)
@@ -154,26 +126,18 @@ namespace FBServerLock
 		return (LR_LOCK_OBTAINED);
 	}
 
-	bool fbLockList::exists(std::string name)
+	int fbLockList::remove(const std::string &name)
 	{
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
-		{
-			if (i->mutexName.compare(name) == 0)
-				return (true);
-		}
+		cleanItems();
 
-		return (false);
-	}
-
-	int fbLockList::remove(std::string name)
-	{
 		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
 		{
 		case WAIT_TIMEOUT:
 			return (LR_TIME_OUT);
 		case WAIT_FAILED:
+			return (LR_WAIT_FAILED);
 		case WAIT_ABANDONED:
-			return (LR_FAILED);
+			return (LR_WAIT_ABANDONED);
 		}
 
 		int Result = LR_INVALID_HANDLE;
@@ -194,26 +158,53 @@ namespace FBServerLock
 		return (Result);
 	}
 
-	void fbLockList::remove(long transactionID)
+	int fbLockList::clearAll()
 	{
 		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
 		{
 		case WAIT_TIMEOUT:
+			return (LR_TIME_OUT);
 		case WAIT_FAILED:
+			return (LR_WAIT_FAILED);
 		case WAIT_ABANDONED:
-			return;
+			return (LR_WAIT_ABANDONED);
 		}
 
 		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
 		{
-			if (i->getTransactionID() == transactionID)
-			{
-				i->setIsExpired(true);
-				_lockObjects.erase(i);
-				remove(transactionID);
-			}
+			i->setIsExpired(true);
+		}
+
+		cleanItems();
+
+		ReleaseMutex(_mutexLockHandle);
+
+		return (LR_LOCK_OBTAINED);
+	}
+
+	int fbLockList::getLockCount()
+	{
+		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
+		{
+		case WAIT_TIMEOUT:
+			return (LR_TIME_OUT);
+		case WAIT_FAILED:
+			return (LR_WAIT_FAILED);
+		case WAIT_ABANDONED:
+			return (LR_WAIT_ABANDONED);
+		}
+
+		cleanItems();
+
+		int Result = 0;
+
+		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		{
+			Result++;
 		}
 
 		ReleaseMutex(_mutexLockHandle);
+
+		return (Result);
 	}
 }

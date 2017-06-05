@@ -27,16 +27,18 @@ namespace FBServerLock
 	typedef enum LockResult
 	{
 		LR_LOCK_OBTAINED = 0,
-		LR_MAX_ITEMS_EXCEEDED = 1,
-		LR_NAME_EXISTS = 2,
-		LR_INVALID_HANDLE = 3,
-		LR_ACCESS_DENIED = 4,
-		LR_TIME_OUT = 5,
-		LR_INVALID_LOCK_NAME = 6,
-		LR_INVALID_PARAMETER = 7,
-		LR_INVALID_AGE = 8,
-		LR_LOCK_NOT_FOUND = 9,
-		LR_FAILED = 999
+		LR_MAX_ITEMS_EXCEEDED = -1,
+		LR_NAME_EXISTS = -2,
+		LR_INVALID_HANDLE = -3,
+		LR_ACCESS_DENIED = -4,
+		LR_TIME_OUT = -5,
+		LR_WAIT_ABANDONED = -6,
+		LR_WAIT_FAILED = -7,
+		LR_INVALID_LOCK_NAME = -8,
+		LR_INVALID_PARAMETER = -9,
+		LR_INVALID_AGE = -10,
+		LR_LOCK_NOT_FOUND =- 11,
+		LR_FAILED = -999
 	};
 
 	class fbLockList
@@ -57,13 +59,12 @@ namespace FBServerLock
 		void setMaxItems(unsigned int total);
 		int getItemCount();
 		
-		bool exists(std::string name);
-		int add(std::string name, ULONG32 maxAge);
-		int add(std::string name, ULONG32 maxAge, long transactionID);
-		int add(fbLockObject lObj);
-
-		int remove(std::string name);
-		void remove(long transactionID);
+		int add(const std::string &name, ULONG32 maxAge);
+		int add(const fbLockObject &lObj);
+		
+		int remove(const std::string &name);
+		int clearAll();
+		int getLockCount();
 	};
 }
 

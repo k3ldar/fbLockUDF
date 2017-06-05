@@ -43,7 +43,7 @@ namespace FBServerLock
 
 		fbLockObject(HANDLE mutexHandle, ULONG32 maxAge);
 		fbLockObject(HANDLE mutexHandle, ULONG32 maxAge, std::string name);
-		fbLockObject(HANDLE mutexHandle, ULONG32 maxAge, std::string name, long transactionID);
+
 		~fbLockObject();
 
 		bool operator==(const fbLockObject& other) const  {

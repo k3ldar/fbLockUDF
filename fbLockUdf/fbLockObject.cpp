@@ -23,6 +23,9 @@ namespace FBServerLock
 {
 	bool fbLockObject::getIsExpired()
 	{
+		if (_canDispose)
+			return (true);
+
 		time_t current;
 		time(&current);
 		double seconds = difftime(current, _startTime);
@@ -60,18 +63,10 @@ namespace FBServerLock
 		_isManaged = true;
 	}
 
-	fbLockObject::fbLockObject(HANDLE mutexHandle, ULONG32 maxAge, std::string name, long transactionID)
-		: fbLockObject(mutexHandle, maxAge, name)
-	{
-		_transactionID = transactionID;
-	}
-
 	fbLockObject::~fbLockObject()
 	{
 		if (_canDispose && _mutexHandle != INVALID_HANDLE_VALUE)
 		{
-			SetLastError(0);
-
 			ReleaseMutex(_mutexHandle);
 			CloseHandle(_mutexHandle);
 			_mutexHandle = INVALID_HANDLE_VALUE;

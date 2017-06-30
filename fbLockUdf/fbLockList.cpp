@@ -15,32 +15,32 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
-#include "fbLockObject.h"
 #include "fbLockList.h"
 
 namespace FBServerLock
 {
+	std::mutex globalListLock;
+
 	fbLockList::fbLockList()
 	{
-		_mutexLockHandle = CreateMutexA(NULL, true, "fb_lock_list_access_mutex");
+
 	}
 
 	fbLockList::fbLockList(DWORD maxItems)
 		:fbLockList()
 	{
-		_maxItems = maxItems;
+		maxItems = maxItems;
 	}
 
 	fbLockList::fbLockList(DWORD maxItems, DWORD timeout)
 		: fbLockList(maxItems)
 	{
-		_maxWait = timeout;
+		maxWait = timeout;
 	}
 
 	fbLockList::~fbLockList()
 	{
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
-			i->setIsExpired(true);
+		std::lock_guard<std::mutex> guard(globalListLock);
 
 		_lockObjects.clear();
 	}
@@ -50,26 +50,13 @@ namespace FBServerLock
 		if (total < 1 || total > 100)
 			return;
 
-		_maxItems = total;
-	}
-
-	int fbLockList::getItemCount()
-	{
-		cleanItems();
-
-		int Result = 0;
-
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
-		{
-			if (!i->getIsExpired())
-				Result++;
-		}
-
-		return (Result);
+		maxItems = total;
 	}
 
 	void fbLockList::cleanItems()
 	{
+		std::lock_guard<std::mutex> guard(globalListLock);
+
 		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
 		{
 			if (i->getIsExpired())
@@ -85,126 +72,55 @@ namespace FBServerLock
 	{
 		cleanItems();
 
-		HANDLE mutexHwnd = CreateMutex(NULL, false, name.c_str());
+		std::lock_guard<std::mutex> guard(globalListLock);
 
-		switch (GetLastError())
-		{
-		case ERROR_ALREADY_EXISTS:
-			ReleaseMutex(mutexHwnd);
-			CloseHandle(mutexHwnd);
-			mutexHwnd = INVALID_HANDLE_VALUE;
-			return (LR_NAME_EXISTS);
-		case ERROR_INVALID_HANDLE:
-			return (LR_INVALID_HANDLE);
-		case ERROR_ACCESS_DENIED:
-			return (LR_ACCESS_DENIED);
-		}
-
-		fbLockObject* lockObj = new fbLockObject(mutexHwnd, maxAge, name);
-		return (add(*lockObj));
-	}
-
-	int fbLockList::add(const fbLockObject &lObj)
-	{
-		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
-		{
-			case WAIT_TIMEOUT:
-				return (LR_TIME_OUT);
-			case WAIT_FAILED:
-				return (LR_WAIT_FAILED);
-			case WAIT_ABANDONED:
-				return (LR_WAIT_ABANDONED);
-		}
-
-		if (_lockObjects.size() > _maxItems)
+		if (_lockObjects.size() > maxItems)
 			return (LR_MAX_ITEMS_EXCEEDED);
 
-		_lockObjects.push_front(lObj);
+		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		{
+			if (i->lockName.compare(name) == 0)
+			{
+				return (LR_NAME_EXISTS);
+			}
+		}
 
-		ReleaseMutex(_mutexLockHandle);
+		_lockObjects.push_front(fbLockObject(maxAge, name));
 
-		return (LR_LOCK_OBTAINED);
+		return (LR_SUCCESS);
 	}
 
 	int fbLockList::remove(const std::string &name)
 	{
 		cleanItems();
-
-		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
-		{
-		case WAIT_TIMEOUT:
-			return (LR_TIME_OUT);
-		case WAIT_FAILED:
-			return (LR_WAIT_FAILED);
-		case WAIT_ABANDONED:
-			return (LR_WAIT_ABANDONED);
-		}
-
-		int Result = LR_INVALID_HANDLE;
+		std::lock_guard<std::mutex> guard(globalListLock);
 
 		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
 		{
-			if (i->mutexName.compare(name) == 0)
+			if (i->lockName.compare(name) == 0)
 			{
-				i->setIsExpired(true);
 				_lockObjects.erase(i);
-				Result = LR_LOCK_OBTAINED;
-				break;
+				return (LR_SUCCESS);
 			}
 		}
 
-		ReleaseMutex(_mutexLockHandle);
-
-		return (Result);
+		return (LR_INVALID_NAME);
 	}
 
 	int fbLockList::clearAll()
 	{
-		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
-		{
-		case WAIT_TIMEOUT:
-			return (LR_TIME_OUT);
-		case WAIT_FAILED:
-			return (LR_WAIT_FAILED);
-		case WAIT_ABANDONED:
-			return (LR_WAIT_ABANDONED);
-		}
+		std::lock_guard<std::mutex> guard(globalListLock);
+		_lockObjects.clear();
 
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
-		{
-			i->setIsExpired(true);
-		}
-
-		cleanItems();
-
-		ReleaseMutex(_mutexLockHandle);
-
-		return (LR_LOCK_OBTAINED);
+		return (LR_SUCCESS);
 	}
 
 	int fbLockList::getLockCount()
 	{
-		switch (WaitForSingleObject(_mutexLockHandle, _maxWait))
-		{
-		case WAIT_TIMEOUT:
-			return (LR_TIME_OUT);
-		case WAIT_FAILED:
-			return (LR_WAIT_FAILED);
-		case WAIT_ABANDONED:
-			return (LR_WAIT_ABANDONED);
-		}
-
 		cleanItems();
 
-		int Result = 0;
+		std::lock_guard<std::mutex> guard(globalListLock);
 
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
-		{
-			Result++;
-		}
-
-		ReleaseMutex(_mutexLockHandle);
-
-		return (Result);
+		return (_lockObjects.size());
 	}
 }

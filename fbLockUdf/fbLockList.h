@@ -19,21 +19,19 @@
 #define FBLOCKLIST
 
 #include <list>
+#include <mutex>
 
 #include "fbLockObject.h"
+#include "fbLockList.h"
 
 namespace FBServerLock
 {
 	typedef enum LockResult
 	{
-		LR_LOCK_OBTAINED = 0,
+		LR_SUCCESS = 0,
 		LR_MAX_ITEMS_EXCEEDED = -1,
 		LR_NAME_EXISTS = -2,
-		LR_INVALID_HANDLE = -3,
-		LR_ACCESS_DENIED = -4,
-		LR_TIME_OUT = -5,
-		LR_WAIT_ABANDONED = -6,
-		LR_WAIT_FAILED = -7,
+		LR_INVALID_NAME = -3,
 		LR_INVALID_LOCK_NAME = -8,
 		LR_INVALID_PARAMETER = -9,
 		LR_INVALID_AGE = -10,
@@ -44,9 +42,8 @@ namespace FBServerLock
 	class fbLockList
 	{
 	private:
-		HANDLE _mutexLockHandle;
-		unsigned int _maxItems = 10;
-		DWORD _maxWait = 2000;
+		unsigned int maxItems = 10;
+		DWORD maxWait = 2000;
 		std::list<FBServerLock::fbLockObject> _lockObjects;
 
 		void cleanItems();
@@ -57,10 +54,8 @@ namespace FBServerLock
 		~fbLockList();
 
 		void setMaxItems(unsigned int total);
-		int getItemCount();
 		
 		int add(const std::string &name, ULONG32 maxAge);
-		int add(const fbLockObject &lObj);
 		
 		int remove(const std::string &name);
 		int clearAll();

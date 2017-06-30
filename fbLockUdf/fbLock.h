@@ -26,7 +26,6 @@
 
 extern "C" 
 {
-
 	FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge);
 	FBUDF_API int fbServerLockRel(const char *lockName);
 	FBUDF_API int fbServerLockClr();

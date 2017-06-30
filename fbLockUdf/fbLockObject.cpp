@@ -15,62 +15,27 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
-#include <time.h>
-
 #include "fbLockObject.h"
 
 namespace FBServerLock
 {
 	bool fbLockObject::getIsExpired()
 	{
-		if (_canDispose)
-			return (true);
-
 		time_t current;
 		time(&current);
-		double seconds = difftime(current, _startTime);
-		_canDispose = seconds > _maximumAge;
-		return (_canDispose);
+		return (difftime(current, startTime) > maximumAge);
 	}
 
-	void fbLockObject::setIsExpired(bool isExpired)
+	fbLockObject::fbLockObject(ULONG32 maxAge, std::string name)
 	{
-		_canDispose = isExpired;
-	}
-
-	bool fbLockObject::canDelete()
-	{
-		return (_isManaged);
-	}
-
-	long fbLockObject::getTransactionID()
-	{
-		return (_transactionID);
-	}
-
-	fbLockObject::fbLockObject(HANDLE mutexHandle, ULONG32 maxAge)
-	{
-		time(&_startTime);
-		_mutexHandle = mutexHandle;
-		_maximumAge = static_cast<double>(maxAge);
-		_canDispose = false;
-	}
-
-	fbLockObject::fbLockObject(HANDLE mutexHandle, ULONG32 maxAge, std::string name)
-		: fbLockObject(mutexHandle, maxAge)
-	{
-		mutexName = std::string(name);
-		_isManaged = true;
+		time(&startTime);
+		maximumAge = static_cast<double>(maxAge);
+		lockName = name;
 	}
 
 	fbLockObject::~fbLockObject()
 	{
-		if (_canDispose && _mutexHandle != INVALID_HANDLE_VALUE)
-		{
-			ReleaseMutex(_mutexHandle);
-			CloseHandle(_mutexHandle);
-			_mutexHandle = INVALID_HANDLE_VALUE;
-		}
+
 	}
 
 	

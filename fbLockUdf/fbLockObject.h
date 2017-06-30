@@ -21,28 +21,22 @@
 #include <Windows.h>
 #include <winnt.h>
 #include <string>
+#include <time.h>
+
 
 namespace FBServerLock
 {
 	class fbLockObject
 	{
 	private:
-		double _maximumAge;
-		bool _canDispose = false;
-		time_t _startTime;
-		HANDLE _mutexHandle = NULL;
-		bool _isManaged;
-		long _transactionID;
+		double maximumAge;
+		time_t startTime;
 	public:
-		std::string mutexName;
+		std::string lockName;
 
 		bool getIsExpired();
-		void setIsExpired(bool expired);
-		bool canDelete();
-		long getTransactionID();
 
-		fbLockObject(HANDLE mutexHandle, ULONG32 maxAge);
-		fbLockObject(HANDLE mutexHandle, ULONG32 maxAge, std::string name);
+		fbLockObject(ULONG32 maxAge, std::string name);
 
 		~fbLockObject();
 

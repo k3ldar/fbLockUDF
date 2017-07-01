@@ -81,9 +81,14 @@ FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge)
 
 		return (FBServerLock::__activeLockList.add(std::string(lockName), *maxAge));
 	}
-	catch (...)
+	catch (const std::exception &error)
 	{
-		return (GetLastError());
+		std::string message = std::string(error.what());
+
+		if (message.find("Error reading data from the connection.") != std::string::npos)
+		{
+			return (-999);
+		}
 	}
 
 	return (FBServerLock::LR_FAILED);

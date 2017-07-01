@@ -38,7 +38,7 @@ namespace FBServerLock
 
 		fbLockObject(ULONG32 maxAge, std::string name);
 
-		~fbLockObject();
+		virtual ~fbLockObject();
 
 		bool operator==(const fbLockObject& other) const  {
 			return (true);

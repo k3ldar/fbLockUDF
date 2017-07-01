@@ -57,13 +57,16 @@ namespace FBServerLock
 	{
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		if (_lockObjects.size() == 0)
+			return;
+
+		for (int i = _lockObjects.size() - 1; i >= 0; i--)
 		{
-			if (i->getIsExpired())
+			fbLockObject lo = _lockObjects.at(i);
+
+			if (lo.getIsExpired())
 			{
-				_lockObjects.erase(i);
-				cleanItems();
-				return;
+				_lockObjects.erase(_lockObjects.begin() + i);
 			}
 		}
 	}
@@ -74,10 +77,10 @@ namespace FBServerLock
 
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		if (_lockObjects.size() > maxItems)
+		if (_lockObjects.size() > maxItems -1)
 			return (LR_MAX_ITEMS_EXCEEDED);
 
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		for (std::vector<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
 		{
 			if (i->lockName.compare(name) == 0)
 			{
@@ -85,7 +88,7 @@ namespace FBServerLock
 			}
 		}
 
-		_lockObjects.push_front(fbLockObject(maxAge, name));
+		_lockObjects.push_back(fbLockObject(maxAge, name));
 
 		return (LR_SUCCESS);
 	}
@@ -95,7 +98,7 @@ namespace FBServerLock
 		cleanItems();
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		for (std::list<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		for (std::vector<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
 		{
 			if (i->lockName.compare(name) == 0)
 			{

@@ -18,7 +18,7 @@
 #ifndef FBLOCKLIST
 #define FBLOCKLIST
 
-#include <list>
+#include <vector>
 #include <mutex>
 
 #include "fbLockObject.h"
@@ -44,14 +44,14 @@ namespace FBServerLock
 	private:
 		unsigned int maxItems = 10;
 		DWORD maxWait = 2000;
-		std::list<FBServerLock::fbLockObject> _lockObjects;
+		std::vector<fbLockObject> _lockObjects;
 
 		void cleanItems();
 	public:
 		fbLockList();
 		fbLockList(DWORD maxItems);
 		fbLockList(DWORD maxItems, DWORD timeout);
-		~fbLockList();
+		virtual ~fbLockList();
 
 		void setMaxItems(unsigned int total);
 		

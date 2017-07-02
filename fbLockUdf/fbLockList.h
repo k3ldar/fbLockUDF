@@ -15,14 +15,14 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
-#ifndef FBLOCKLIST
-#define FBLOCKLIST
+#ifndef FB_LOCKLIST
+#define FB_LOCKLIST
 
 #include <vector>
 #include <mutex>
 
+#include "fbLock.h"
 #include "fbLockObject.h"
-#include "fbLockList.h"
 
 namespace FBServerLock
 {
@@ -31,7 +31,6 @@ namespace FBServerLock
 		LR_SUCCESS = 0,
 		LR_MAX_ITEMS_EXCEEDED = -1,
 		LR_NAME_EXISTS = -2,
-		LR_INVALID_NAME = -3,
 		LR_INVALID_LOCK_NAME = -8,
 		LR_INVALID_PARAMETER = -9,
 		LR_INVALID_AGE = -10,
@@ -42,15 +41,13 @@ namespace FBServerLock
 	class fbLockList
 	{
 	private:
-		unsigned int maxItems = 10;
-		DWORD maxWait = 2000;
-		std::vector<fbLockObject> _lockObjects;
+		unsigned int maximumLocks = 10;
+		std::vector<fbLockObject> lockObjects;
 
 		void cleanItems();
 	public:
 		fbLockList();
 		fbLockList(DWORD maxItems);
-		fbLockList(DWORD maxItems, DWORD timeout);
 		virtual ~fbLockList();
 
 		void setMaxItems(unsigned int total);
@@ -59,7 +56,7 @@ namespace FBServerLock
 		
 		int remove(const std::string &name);
 		int clearAll();
-		int getLockCount();
+		uInt getLockCount();
 	};
 }
 

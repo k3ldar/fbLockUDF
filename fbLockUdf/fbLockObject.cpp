@@ -19,18 +19,22 @@
 
 namespace FBServerLock
 {
-	bool fbLockObject::getIsExpired()
+	fbLockObject::fbLockObject(const int &maxAge)
 	{
-		time_t current;
-		time(&current);
-		return (difftime(current, startTime) > maximumAge);
+		double maxLockAge = static_cast<double>(maxAge);
+
+		if (maxLockAge < 1 || maxLockAge > 1440)
+			maxLockAge = 10; //default 10 seconds
+
+		time(&startTime);
+		maximumAge = maxLockAge;
+		lockName = "standard_lock";
 	}
 
-	fbLockObject::fbLockObject(ULONG32 maxAge, std::string name)
+	fbLockObject::fbLockObject(const int &maxAge, const std::string &name)
+		: fbLockObject(maxAge)
 	{
-		time(&startTime);
-		maximumAge = static_cast<double>(maxAge);
-		lockName = name;
+		lockName = std::string(name);
 	}
 
 	fbLockObject::~fbLockObject()
@@ -38,5 +42,15 @@ namespace FBServerLock
 
 	}
 
-	
+	std::string fbLockObject::getLockName()
+	{
+		return (lockName);
+	}
+
+	bool fbLockObject::getIsExpired()
+	{
+		time_t current;
+		time(&current);
+		return (difftime(current, startTime) > maximumAge);
+	}
 }

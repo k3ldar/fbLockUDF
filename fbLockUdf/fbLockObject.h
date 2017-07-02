@@ -15,14 +15,13 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
-#ifndef FBLOCKOBJECT
-#define FBLOCKOBJECT
+#ifndef FB_LOCK_OBJECT
+#define FB_LOCK_OBJECT
 
 #include <Windows.h>
 #include <winnt.h>
 #include <string>
 #include <time.h>
-
 
 namespace FBServerLock
 {
@@ -31,18 +30,17 @@ namespace FBServerLock
 	private:
 		double maximumAge;
 		time_t startTime;
-	public:
 		std::string lockName;
-
+	public:
+		std::string getLockName();
 		bool getIsExpired();
 
-		fbLockObject(ULONG32 maxAge, std::string name);
+		fbLockObject(const int &maxAge);
+		fbLockObject(const int &maxAge, const std::string &name);
 
 		virtual ~fbLockObject();
 
-		bool operator==(const fbLockObject& other) const  {
-			return (true);
-		}
+		bool operator==(const fbLockObject& other) const { return (lockName.compare(other.lockName) == std::string::npos); }
 	};
 }
 

@@ -17,6 +17,12 @@
 
 #include "fbLockList.h"
 
+
+#if _WIN64
+// remove warning when building in 64 bit for size_t uInt comparison
+#pragma warning( disable : 4267)
+#endif
+
 namespace FBServerLock
 {
 	std::mutex globalListLock;
@@ -29,20 +35,12 @@ namespace FBServerLock
 	fbLockList::fbLockList(DWORD maxItems)
 		:fbLockList()
 	{
-		maxItems = maxItems;
-	}
-
-	fbLockList::fbLockList(DWORD maxItems, DWORD timeout)
-		: fbLockList(maxItems)
-	{
-		maxWait = timeout;
+		maximumLocks = maxItems;
 	}
 
 	fbLockList::~fbLockList()
 	{
-		std::lock_guard<std::mutex> guard(globalListLock);
-
-		_lockObjects.clear();
+		lockObjects.clear();
 	}
 
 	void fbLockList::setMaxItems(unsigned int total)
@@ -50,23 +48,21 @@ namespace FBServerLock
 		if (total < 1 || total > 100)
 			return;
 
-		maxItems = total;
+		maximumLocks = total;
 	}
 
 	void fbLockList::cleanItems()
 	{
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		if (_lockObjects.size() == 0)
+		if (lockObjects.size() == 0)
 			return;
 
-		for (int i = _lockObjects.size() - 1; i >= 0; i--)
+		for (int i = lockObjects.size() - 1; i >= 0; i--)
 		{
-			fbLockObject lo = _lockObjects.at(i);
-
-			if (lo.getIsExpired())
+			if (lockObjects.at(i).getIsExpired())
 			{
-				_lockObjects.erase(_lockObjects.begin() + i);
+				lockObjects.erase(lockObjects.begin() + i);
 			}
 		}
 	}
@@ -77,53 +73,54 @@ namespace FBServerLock
 
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		if (_lockObjects.size() > maxItems -1)
+		if (lockObjects.size() > maximumLocks -1)
 			return (LR_MAX_ITEMS_EXCEEDED);
 
-		for (std::vector<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		for (std::vector<fbLockObject>::iterator iter = lockObjects.begin(); iter != lockObjects.end(); iter++)
 		{
-			if (i->lockName.compare(name) == 0)
+			if (iter->getLockName().compare(name) == 0)
 			{
 				return (LR_NAME_EXISTS);
 			}
 		}
 
-		_lockObjects.push_back(fbLockObject(maxAge, name));
-
+		lockObjects.push_back(fbLockObject(maxAge, name));
 		return (LR_SUCCESS);
 	}
 
 	int fbLockList::remove(const std::string &name)
 	{
 		cleanItems();
+
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		for (std::vector<fbLockObject>::iterator i = _lockObjects.begin(); i != _lockObjects.end(); i++)
+		for (std::vector<fbLockObject>::iterator iter = lockObjects.begin(); iter != lockObjects.end(); iter++)
 		{
-			if (i->lockName.compare(name) == 0)
+			if (iter->getLockName().compare(name) == 0)
 			{
-				_lockObjects.erase(i);
+				lockObjects.erase(iter);
 				return (LR_SUCCESS);
 			}
 		}
 
-		return (LR_INVALID_NAME);
+		return (LR_LOCK_NOT_FOUND);
 	}
 
 	int fbLockList::clearAll()
 	{
 		std::lock_guard<std::mutex> guard(globalListLock);
-		_lockObjects.clear();
+
+		lockObjects.clear();
 
 		return (LR_SUCCESS);
 	}
 
-	int fbLockList::getLockCount()
+	uInt fbLockList::getLockCount()
 	{
 		cleanItems();
 
 		std::lock_guard<std::mutex> guard(globalListLock);
 
-		return (_lockObjects.size());
+		return (lockObjects.size() + 1);
 	}
 }

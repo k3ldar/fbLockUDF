@@ -9,4 +9,9 @@
     <LocalDebuggerCommand>T:\firebird3\temp\Win32\Debug\firebird\firebird.exe</LocalDebuggerCommand>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommand>C:\Program Files\Firebird\Firebird_3_0\firebird.exe</LocalDebuggerCommand>
+    <LocalDebuggerCommandArguments>-a</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
 </Project>

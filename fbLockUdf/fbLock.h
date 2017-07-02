@@ -14,7 +14,16 @@
 *
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
+#include <Windows.h>
 #include <winnt.h>
+#include <string.h>
+#include "fbLockList.h"
+
+
+#ifndef FB_LOCK
+#define FB_LOCK
+
+typedef  unsigned int uInt;
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #ifdef FB_LOCK_FUNCTIONS
@@ -29,5 +38,7 @@ extern "C"
 	FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge);
 	FBUDF_API int fbServerLockRel(const char *lockName);
 	FBUDF_API int fbServerLockClr();
-	FBUDF_API int fbGetLockCount();
+	FBUDF_API uInt fbGetLockCount();
 }
+
+#endif

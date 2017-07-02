@@ -15,14 +15,8 @@
 *  Copyright (c) 2017 Simon Carter.  All Rights Reserved.
 */
 
-#include <string.h>
 
-#include "fbLockList.h"
 #include "fbLock.h"
-
-#ifndef FB_LOCK_FUNCTIONS
-#define FB_LOCK_FUNCTIONS
-#endif
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 
@@ -60,7 +54,6 @@ FBUDF_API int fbServerLockRel(const char *lockName)
 	}
 	catch (...)
 	{
-		return (GetLastError());
 	}
 
 	return (FBServerLock::LR_FAILED);
@@ -81,14 +74,8 @@ FBUDF_API int fbServerLockGet(const char *lockName, int *maxAge)
 
 		return (FBServerLock::__activeLockList.add(std::string(lockName), *maxAge));
 	}
-	catch (const std::exception &error)
+	catch (...)
 	{
-		std::string message = std::string(error.what());
-
-		if (message.find("Error reading data from the connection.") != std::string::npos)
-		{
-			return (-999);
-		}
 	}
 
 	return (FBServerLock::LR_FAILED);
@@ -102,13 +89,12 @@ FBUDF_API int fbServerLockClr()
 	}
 	catch (...)
 	{
-		return (GetLastError());
 	}
 
 	return (FBServerLock::LR_FAILED);
 }
 
-FBUDF_API int fbGetLockCount()
+FBUDF_API uInt fbGetLockCount()
 {
 	return (FBServerLock::__activeLockList.getLockCount());
 }
